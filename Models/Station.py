@@ -15,6 +15,8 @@ class Station:
     headingVector: array = array([velocity, 90])
     throttleVector: array = array([throttle * maxThrottle, 90])
     orbit: Orbit
+    last_update: float = 0
+    speed = 10
 
     def __init__(self):
         self.orbit = Orbit()
