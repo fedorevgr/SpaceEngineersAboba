@@ -1,4 +1,8 @@
 class Orbit:
-    Apogee: float = 1.5e9
-    Perigee: float = 1.5e9
-    Angle: float = 0
+    apogee: float = 1.5e9
+    perigee: float = 1.5e9
+    angle: float = 0
+    eccentricity: float = 0
+
+    def calculateOrbit(self, velocity, ):
+
