@@ -11,6 +11,10 @@ class Planet:
     def __init__(self, radius: float, mass: float) -> None:
         self.radius = radius
         self.mass = mass
-        self.gravitational_parameter = radius*mass
+        self.gravitational_parameter = radius * mass
+
+    def getMU(self):
+        return G * self.mass
+
 
         
