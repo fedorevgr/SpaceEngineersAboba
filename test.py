@@ -8,16 +8,18 @@ from astropy import units as u
 
 start = time()
 s = Station("Earth", velocity=1e4)
-s.timer.setTimeScale(100)
+s.timer.setTimeScale(400)
 arr_x, arr_y = [], []
 
 
 async def runStation():
-    for _ in range(50):
+    for _ in range(100):
         await asyncio.sleep(1)
 
         x, y = s.getCoordinates()
-        print(x, y)
+        v = s.getVelocity()
+
+        print(x, y, v)
         arr_x.append(x)
         arr_y.append(y)
 

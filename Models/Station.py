@@ -58,7 +58,17 @@ class Station:
         return positions
 
     def getCoordinates(self):
-        return tuple(self.orbit.propagate(self.timer.time() * u.s).r.value)[:2]
+        return tuple(self.orbit.propagate(self.timer.time() * u.s - self.lastChangeOfOrbit).r.value)[:2]
+
+    def getVelocity(self):
+        curr_time = self.timer.time() * u.s - self.lastChangeOfOrbit
+        curr_pos = self.orbit.propagate(curr_time).r
+        delta = 10 * u.s
+        future_pos = self.orbit.propagate(curr_time + delta).r
+
+        velocity = (future_pos - curr_pos) / delta
+
+        return tuple(velocity.value)[:2]
 
     def blow(self, thrustVector: list, delta_time: float):
         """
