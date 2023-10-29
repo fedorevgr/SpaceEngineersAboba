@@ -58,9 +58,16 @@ class Station:
         return positions
 
     def getCoordinates(self):
+        """
+        :return: радиус-вектор {x, y}
+        """
         return tuple(self.orbit.propagate(self.timer.time() * u.s - self.lastChangeOfOrbit).r.value)[:2]
 
     def getVelocity(self):
+        """
+
+        :return: вектор скорости {x, y}
+        """
         curr_time = self.timer.time() * u.s - self.lastChangeOfOrbit
         curr_pos = self.orbit.propagate(curr_time).r
         delta = 10 * u.s
