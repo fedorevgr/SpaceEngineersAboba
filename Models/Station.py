@@ -15,7 +15,12 @@ BODIES = {
 
 
 class Station:
-    def __init__(self, bodyName: str, height: float = 403e3, velocity: float = 7.33e3):
+
+    def __init__(self,
+                 bodyName: str,
+                 height: float = 403e3,
+                 velocity: float = 7.33e3,
+                 timeScale: int = 1):
 
         self.planet = BODIES[bodyName]
 
@@ -35,12 +40,15 @@ class Station:
             ]
         ) * u.m / u.s
 
-        self.lastChangeOfOrbit = time()
+        self.lastChangeOfOrbit = time() * u.s
+
         self.orbit = Orbit.from_vectors(
             attractor=self.planet,
             r=self.coordinates,
             v=self.velocity
         )
+
+        self.timeScale = timeScale
 
     def getOrbitCoordinates(self, points=100) -> list[float]:
         """
@@ -54,12 +62,13 @@ class Station:
 
         return positions
 
-    def getCoordinates(self, inTime: float):
-        return self.orbit.propagate(inTime * u.s).r.value,
+    def getCoordinates(self) -> tuple[float]:
+        currTime = time() * u.s - self.lastChangeOfOrbit
+        return tuple(self.orbit.propagate(currTime).r.value)[:2]
 
     def blow(self, thrustVector: tuple, delta_time: float):
         """
-
+        Изменяет значения скорости в точке на орбите
         :param thrustVector:
         :param delta_time:
         :return:
@@ -85,10 +94,10 @@ class Station:
         commonAcceleration = thrustVector + gOneVector
 
         deltaV = commonAcceleration * delta_time
-        self.updateVelocity(deltaV)
+        self._updateVelocity(deltaV)
         self.lastChangeOfOrbit = time()
 
-    def updateVelocity(self, delta):
+    def _updateVelocity(self, delta):
         self.velocity += delta
 
         self.orbit = Orbit.from_vectors(
