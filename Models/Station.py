@@ -54,24 +54,24 @@ class Station:
 
         return positions
 
-    def getCoordinates(self, inTime: float):
-        return self.orbit.propagate(inTime * u.s).r.value,
+    def getCoordinates(self):
+        return tuple(self.orbit.propagate(time() * u.s).r.value)[:2]
 
-    def blow(self, thrustVector: tuple, delta_time: float):
+    def blow(self, thrustVector: list, delta_time: float):
         """
 
         :param thrustVector:
         :param delta_time:
         :return:
         """
-        thrustVector = array(thrustVector)
+        thrustVector = array(thrustVector + [0])
 
         delta_time, timeElapsed = delta_time * u.s, (time() - self.lastChangeOfOrbit) * u.s
 
         deltaInTime = 10 * u.s
 
-        self.coordinates = self.orbit.propagate(timeElapsed)
-        nextCoordinates = self.orbit.propagate(timeElapsed + delta_time)
+        self.coordinates = self.orbit.propagate(timeElapsed).r
+        nextCoordinates = self.orbit.propagate(timeElapsed + delta_time).r
 
         self.velocity = (nextCoordinates - self.coordinates) / deltaInTime
 
