@@ -2,7 +2,8 @@ from Models.Orbit import Orbit
 from numpy import array, linspace, linalg
 from poliastro.bodies import *
 from astropy import units as u
-from time import time
+
+from Models.Timer import Timer
 
 
 BODIES = {
@@ -15,7 +16,7 @@ BODIES = {
 
 
 class Station:
-    def __init__(self, bodyName: str, height: float = 403e3, velocity: float = 7.33e3):
+    def __init__(self, bodyName: str = "Earth", height: float = 403e3, velocity: float = 7.33e3):
 
         self.planet = BODIES[bodyName]
 
@@ -35,7 +36,9 @@ class Station:
             ]
         ) * u.m / u.s
 
-        self.lastChangeOfOrbit = time()
+        self.timer = Timer()
+
+        self.lastChangeOfOrbit = self.timer.time() * u.s
         self.orbit = Orbit.from_vectors(
             attractor=self.planet,
             r=self.coordinates,
@@ -55,7 +58,7 @@ class Station:
         return positions
 
     def getCoordinates(self):
-        return tuple(self.orbit.propagate(time() * u.s).r.value)[:2]
+        return tuple(self.orbit.propagate(self.timer.time() * u.s).r.value)[:2]
 
     def blow(self, thrustVector: list, delta_time: float):
         """
@@ -66,7 +69,7 @@ class Station:
         """
         thrustVector = array(thrustVector + [0])
 
-        delta_time, timeElapsed = delta_time * u.s, (time() - self.lastChangeOfOrbit) * u.s
+        delta_time, timeElapsed = delta_time * u.s, (self.timer.time() * u.s - self.lastChangeOfOrbit)
 
         deltaInTime = 10 * u.s
 
@@ -86,7 +89,7 @@ class Station:
 
         deltaV = commonAcceleration * delta_time
         self.updateVelocity(deltaV)
-        self.lastChangeOfOrbit = time()
+        self.lastChangeOfOrbit = self.timer.time()
 
     def updateVelocity(self, delta):
         self.velocity += delta
