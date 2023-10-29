@@ -23,7 +23,6 @@ async def runStation():
         arr_x.append(x)
         arr_y.append(y)
 
-
     loop.stop()
     plt.figure()
     plt.plot(arr_x, arr_y)

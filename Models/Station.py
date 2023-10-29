@@ -65,7 +65,6 @@ class Station:
 
     def getVelocity(self):
         """
-
         :return: вектор скорости {x, y}
         """
         curr_time = self.timer.time() * u.s - self.lastChangeOfOrbit
@@ -75,11 +74,10 @@ class Station:
 
         velocity = (future_pos - curr_pos) / delta
 
-        return tuple(velocity.value)[:2]
+        return tuple(velocity.value)
 
     def blow(self, thrustVector: list, delta_time: float):
         """
-
         :param thrustVector:
         :param delta_time:
         :return:
@@ -88,12 +86,7 @@ class Station:
 
         delta_time, timeElapsed = delta_time * u.s, (self.timer.time() * u.s - self.lastChangeOfOrbit)
 
-        deltaInTime = 10 * u.s
-
-        self.coordinates = self.orbit.propagate(timeElapsed).r
-        nextCoordinates = self.orbit.propagate(timeElapsed + delta_time).r
-
-        self.velocity = (nextCoordinates - self.coordinates) / deltaInTime
+        self.velocity = array(self.getVelocity()) * u.m / u.s
 
         thrustVector = thrustVector * u.m / (u.s * u.s)
 
@@ -116,3 +109,19 @@ class Station:
             r=self.coordinates,
             v=self.velocity
         )
+
+    def getOrbitDetails(self):
+        e = self.orbit.ecc
+        a = self.orbit.a
+        inc = self.orbit.inc
+        raan = self.orbit.raan
+        nu = self.orbit.nu
+        pe = self.orbit.argp
+        return {
+            "Semi-major axis": a,
+            "Eccentricity": e,
+            "Inclination": inc,
+            "RAAN": raan,
+            "Argument of Perigee": pe,
+            "True Anomaly": nu
+                }
