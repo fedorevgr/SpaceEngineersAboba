@@ -1,32 +1,74 @@
-import typing
-from Orbit import Orbit
-from numpy import array
-from math import sin, cos, pi
-from Models.Planet import Planet
+from Models.Orbit import Orbit
+from numpy import array, linspace, linalg
+from poliastro.bodies import *
+from astropy import units as u
+
+
+
+BODIES = {
+    "Earth": Earth,
+    "Mercury": Mercury,
+    "Moon": Moon,
+    "Sun": Sun,
+    "Mars": Mars
+}
 
 
 class Station:
-    planet = Planet(6.4e6, 6e24)
-    name = "James Webb Telescope"
-    heightVector: array = array([408e3 + planet.radius, 0])
-    velocity: float = 7.66e3
-    throttle: float = 0
-    maxThrottle = 4
-    headingVector: array = array([velocity, 90])
-    throttleVector: array = array([throttle * maxThrottle, 90])
-    orbit: Orbit
+    def __init__(self, bodyName: str):
 
-    def __init__(self):
-        self.orbit = Orbit()
+        self.planet = BODIES[bodyName]
 
-    def getPosition(self):
-        return (self.heightVector[0] * cos(self.heightVector[1]),
-                self.heightVector[0] * sin(self.heightVector[1]))
+        self.coordinates = array(
+            [
+                403e3 + self.planet.R.value,
+                0,
+                0
+            ]
+        ) * u.m
 
-    def getAngularVelocity(self):
-        return self.headingVector[0] / self.heightVector[0]
+        self.velocity = array(
+            [
+                0,
+                7.33e3,
+                0
+            ]
+        ) * u.m / u.s
 
-    def updateAngle(self, deltaTime):
-        deltaAngle = self.getAngularVelocity() * deltaTime
-        self.headingVector[1] += deltaAngle
-        self.heightVector[1] += deltaAngle
+        self.orbit = Orbit.from_vectors(
+            attractor=self.planet,
+            r=self.coordinates,
+            v=self.velocity
+        )
+
+    def setVelocity(self, x, y):
+        self.velocity = array([x, y, 0]) * u.m / u.s
+        self.orbit = Orbit.from_vectors(
+            attractor=self.planet,
+            r=self.coordinates,
+            v=self.velocity
+        )
+
+    def getOrbitCoordinates(self, points=100):
+        times = linspace(0, self.orbit.period.to(u.s), points)
+
+        positions = [self.orbit.propagate(time << u.s).r for time in times]
+
+        x_vals, y_vals, z = zip(*positions)
+        x_vals = [val.value for val in x_vals]
+        y_vals = [val.value for val in y_vals]
+
+        return x_vals, y_vals
+
+    def getCoordinates(self, inTime: float):
+        return self.orbit.propagate(inTime * u.s).r.value,
+
+    def blow(self, thrustVector: array, delta_time: float):
+        thrustVector = thrustVector * u.m / (u.s * u.s)
+        gValue = self.planet.k / (linalg.norm(self.coordinates) ** 2)
+        rValue = linalg.norm(self.coordinates)
+        gOneVector = ((self.coordinates.copy() * -1) / rValue.value) * gValue.value
+        print(gOneVector)
+
+        deltaV = thrustVector * (delta_time * u.s)
+

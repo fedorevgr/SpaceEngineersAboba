@@ -1,16 +1,22 @@
-# This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+import asyncio
+import Models.Station
+from numpy import array
+from numpy.linalg import norm as vect_len
+from time import time
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+s = Models.Station.StationV2()
+delta = 1
+warp = 100
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+
+async def main():
+    time_ = time()
+    while True:
+        s.update()
+        await asyncio.sleep(delta)
+
+
+loop = asyncio.get_event_loop()
+loop.create_task(main())
+loop.run_forever()
