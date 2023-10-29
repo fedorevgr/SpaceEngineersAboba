@@ -1,34 +1,41 @@
-import typing
-from Orbit import Orbit
-from numpy import array
-from math import sin, cos, pi
+import time
+from typing import Collection, Any
+
+from numpy import array, ndarray
+from math import sin, cos
 from Models.Planet import Planet
+from Models.Orbit import Orbit
 
 
 class Station:
-    planet = Planet(6.4e6, 6e24)
     name = "James Webb Telescope"
-    heightVector: array = array([408e3 + planet.radius, 0])
+    planet = Planet(6.4e6, 6e24)
+    height_vector: ndarray[float] = array([408e3 + planet.radius, 0])
     velocity: float = 7.66e3
     throttle: float = 0
     maxThrottle = 4
-    headingVector: array = array([velocity, 90])
-    throttleVector: array = array([throttle * maxThrottle, 90])
+    heading_vector: ndarray[float] = array([velocity, 90])
+    throttle_vector: ndarray[float] = array([throttle * maxThrottle, 90])
     orbit: Orbit
     last_update: float = 0
-    speed = 10
 
     def __init__(self):
         self.orbit = Orbit()
 
-    def getPosition(self):
-        return (self.heightVector[0] * cos(self.heightVector[1]),
-                self.heightVector[0] * sin(self.heightVector[1]))
+    def get_position(self):
+        return (self.height_vector[0] * cos(self.height_vector[1]),
+                self.height_vector[0] * sin(self.height_vector[1]))
 
-    def getAngularVelocity(self):
-        return self.headingVector[0] / self.heightVector[0]
+    def get_angular_velocity(self) -> float:
+        return self.heading_vector[0] / self.height_vector[0]
 
-    def updateAngle(self, deltaTime):
-        deltaAngle = self.getAngularVelocity() * deltaTime
-        self.headingVector[1] += deltaAngle
-        self.heightVector[1] += deltaAngle
+    def update_angle(self, delta_time: float) -> None:
+        delta_angle = self.get_angular_velocity() * delta_time
+        self.heading_vector[1] += delta_angle
+        self.height_vector[1] += delta_angle
+
+    def update(self):
+        now = time.time()*100
+        delta_time = now - self.last_update
+        self.update_angle(delta_time)
+        self.last_update = now

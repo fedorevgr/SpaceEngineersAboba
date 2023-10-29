@@ -13,7 +13,7 @@ class Planet:
         self.mass = mass
         self.gravitational_parameter = radius * mass
 
-    def getMU(self):
+    def get_mu(self):
         return G * self.mass
 
 
