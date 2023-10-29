@@ -3,21 +3,25 @@ from time import time, sleep
 from numpy import array
 from matplotlib import pyplot as plt, patches
 import asyncio
+from astropy import units as u
 
 
 start = time()
-s = Station("Earth")
+s = Station("Earth", velocity=1e4)
 s.timer.setTimeScale(100)
 arr_x, arr_y = [], []
 
 
 async def runStation():
-    for _ in range(100):
+    for _ in range(50):
         await asyncio.sleep(1)
-        print(s.timer.time())
+
         x, y = s.getCoordinates()
+        print(x, y)
         arr_x.append(x)
         arr_y.append(y)
+
+
     loop.stop()
     plt.figure()
     plt.plot(arr_x, arr_y)

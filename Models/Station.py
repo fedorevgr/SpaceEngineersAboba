@@ -89,7 +89,7 @@ class Station:
 
         deltaV = commonAcceleration * delta_time
         self.updateVelocity(deltaV)
-        self.lastChangeOfOrbit = self.timer.time()
+        self.lastChangeOfOrbit = self.timer.time() * u.s
 
     def updateVelocity(self, delta):
         self.velocity += delta
