@@ -1,48 +1,107 @@
-import time
-from typing import Collection, Any
-
-from numpy import array, ndarray
-from math import sin, cos
-from Models.Planet import Planet
 from Models.Orbit import Orbit
+from numpy import array, linspace, linalg
+from poliastro.bodies import *
+from astropy import units as u
+from time import time
+
+
+BODIES = {
+    "Earth": Earth,
+    "Mercury": Mercury,
+    "Moon": Moon,
+    "Sun": Sun,
+    "Mars": Mars
+}
 
 
 class Station:
-    name = "James Webb Telescope"
-    planet = Planet(6.4e6, 6e24)
-    height_vector: ndarray[float] = array([408e3 + planet.radius, 0])
-    velocity: float = 7.66e3
-    throttle: float = 0
-    maxThrottle = 4
-    heading_vector: ndarray[float] = array([velocity, 90])
-    throttle_vector: ndarray[float] = array([throttle * maxThrottle, 90])
-    orbit: Orbit
-    last_update: float = 0
 
-    def __init__(self):
-        self.orbit = Orbit()
+    def __init__(self,
+                 bodyName: str,
+                 height: float = 403e3,
+                 velocity: float = 7.33e3,
+                 timeScale: int = 1):
 
-    def get_position(self):
-        """Get realtime station position based on it's height (radius) vector"""
-        return (self.height_vector[0] * cos(self.height_vector[1]),
-                self.height_vector[0] * sin(self.height_vector[1]))
+        self.planet = BODIES[bodyName]
 
-    def get_angular_velocity(self) -> float:
-        """Get station realtime angular velocity"""
+        self.coordinates = array(
+            [
+                height + self.planet.R.value,
+                0,
+                0
+            ]
+        ) * u.m
 
-        return self.heading_vector[0] / self.height_vector[0]
+        self.velocity = array(
+            [
+                0,
+                velocity,
+                0
+            ]
+        ) * u.m / u.s
 
-    def update_angle(self, delta_time: float) -> None:
-        """Update station angle based on passed time"""
+        self.lastChangeOfOrbit = time() * u.s
 
-        delta_angle = self.get_angular_velocity() * delta_time
-        self.heading_vector[1] += delta_angle
-        self.height_vector[1] += delta_angle
+        self.orbit = Orbit.from_vectors(
+            attractor=self.planet,
+            r=self.coordinates,
+            v=self.velocity
+        )
 
-    def update(self):
-        """Update station parameters based on time passed from last update"""
+        self.timeScale = timeScale
 
-        now = time.time()
-        delta_time = now - self.last_update
-        self.update_angle(delta_time)
-        self.last_update = now
+    def getOrbitCoordinates(self, points=100) -> list[float]:
+        """
+        Возвращает координаты точек принадлежащих орбите
+        :param points:
+        :return: ((x1, y1), (x2, y2), (x3, y3), ...)
+        """
+        times = linspace(0, self.orbit.period.to(u.s), points)
+
+        positions = [tuple(self.orbit.propagate(time << u.s).r.value)[:2] for time in times]
+
+        return positions
+
+    def getCoordinates(self) -> tuple[float]:
+        currTime = time() * u.s - self.lastChangeOfOrbit
+        return tuple(self.orbit.propagate(currTime).r.value)[:2]
+
+    def blow(self, thrustVector: tuple, delta_time: float):
+        """
+        Изменяет значения скорости в точке на орбите
+        :param thrustVector:
+        :param delta_time:
+        :return:
+        """
+        thrustVector = array(thrustVector)
+
+        delta_time, timeElapsed = delta_time * u.s, (time() - self.lastChangeOfOrbit) * u.s
+
+        deltaInTime = 10 * u.s
+
+        self.coordinates = self.orbit.propagate(timeElapsed)
+        nextCoordinates = self.orbit.propagate(timeElapsed + delta_time)
+
+        self.velocity = (nextCoordinates - self.coordinates) / deltaInTime
+
+        thrustVector = thrustVector * u.m / (u.s * u.s)
+
+        gValue = self.planet.k / (linalg.norm(self.coordinates) ** 2)
+        rValue = linalg.norm(self.coordinates)
+
+        gOneVector = ((self.coordinates.copy() * -1) / rValue) * gValue
+
+        commonAcceleration = thrustVector + gOneVector
+
+        deltaV = commonAcceleration * delta_time
+        self._updateVelocity(deltaV)
+        self.lastChangeOfOrbit = time()
+
+    def _updateVelocity(self, delta):
+        self.velocity += delta
+
+        self.orbit = Orbit.from_vectors(
+            attractor=self.planet,
+            r=self.coordinates,
+            v=self.velocity
+        )
