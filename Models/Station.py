@@ -42,21 +42,28 @@ class Station:
             v=self.velocity
         )
 
-    def getOrbitCoordinates(self, points=100):
+    def getOrbitCoordinates(self, points=100) -> list[float]:
+        """
+        Возвращает координаты точек принадлежащих орбите
+        :param points:
+        :return: ((x1, y1), (x2, y2), (x3, y3), ...)
+        """
         times = linspace(0, self.orbit.period.to(u.s), points)
 
-        positions = [self.orbit.propagate(time << u.s).r for time in times]
+        positions = [tuple(self.orbit.propagate(time << u.s).r.value)[:2] for time in times]
 
-        x_vals, y_vals, z = zip(*positions)
-        x_vals = [val.value for val in x_vals]
-        y_vals = [val.value for val in y_vals]
-
-        return x_vals, y_vals
+        return positions
 
     def getCoordinates(self, inTime: float):
         return self.orbit.propagate(inTime * u.s).r.value,
 
     def blow(self, thrustVector: tuple, delta_time: float):
+        """
+
+        :param thrustVector:
+        :param delta_time:
+        :return:
+        """
         thrustVector = array(thrustVector)
 
         delta_time, timeElapsed = delta_time * u.s, (time() - self.lastChangeOfOrbit) * u.s
