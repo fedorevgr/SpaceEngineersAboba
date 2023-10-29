@@ -23,19 +23,26 @@ class Station:
         self.orbit = Orbit()
 
     def get_position(self):
+        """Get realtime station position based on it's height (radius) vector"""
         return (self.height_vector[0] * cos(self.height_vector[1]),
                 self.height_vector[0] * sin(self.height_vector[1]))
 
     def get_angular_velocity(self) -> float:
+        """Get station realtime angular velocity"""
+
         return self.heading_vector[0] / self.height_vector[0]
 
     def update_angle(self, delta_time: float) -> None:
+        """Update station angle based on passed time"""
+
         delta_angle = self.get_angular_velocity() * delta_time
         self.heading_vector[1] += delta_angle
         self.height_vector[1] += delta_angle
 
     def update(self):
-        now = time.time()*100
+        """Update station parameters based on time passed from last update"""
+
+        now = time.time()
         delta_time = now - self.last_update
         self.update_angle(delta_time)
         self.last_update = now
